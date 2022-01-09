@@ -96,11 +96,8 @@ const ArbitraryRulesList: Rules[] = [
     { rule: [1, 0, 1], resolve: 1 },
   ],
 ];
-// .map(rls => {
-//   rls.push({ rule: [0, 0, 0], resolve: 0 })
-//   rls.push({ rule: [0, 0, 0], resolve: 0 })
-//   return rls
-// }) as Rules[]
+
+
 
 function* RandomStoreRule() {
   let prev = 0;
@@ -111,14 +108,20 @@ function* RandomStoreRule() {
       prev = 0
     }
     yield prev++;
+    
   }
-
+  // eslint-disable-next-line 
   return prev;
 }
 
+const params = new URLSearchParams(window.location.search)
+const paramRule = params.get("rule")
+const paramMaze = params.get("maze")
+const paramShuffle = params.get("shuffle")
+
 const randomStoreRule = RandomStoreRule();
 
-const RULES: Rules = ArbitraryRulesList[1];
+const RULES: Rules = paramRule ? decodeRule(paramRule) : ArbitraryRulesList[1];
 
 const randomBinary = () => Math.round(Math.random());
 const randomRules = () =>
@@ -222,10 +225,47 @@ function getCoords(index: number) {
   };
 }
 
+function convertNumber(n: string, fromBase: number, toBase: number) {
+  return parseInt(n.toString(), fromBase).toString(toBase);
+}
+
+function converter(c: string) {
+  const j = convertNumber(c, 16, 2).split("").map(r => Number(r))
+  const pad = 4 - j.length
+  for(let i = 0; i < pad; i++) {
+    j.splice(0,0,0)
+  }
+  return j
+}
+
+function encodeRule(rules: Rules, settings: Settings) {
+  const code = rules.reduce((str, c) => str + convertNumber(c.rule.join("") + c.resolve, 2, 16), "")
+  window.history.replaceState({}, "rule", `?rule=${code}&maze=${settings.maze}&shuffle=${settings.shuffled}`)
+  return code
+}
+
+
+function decodeRule(code: string) {
+  return code.split("").map(c => {
+    const [x,y,z,d] = converter(c)
+    return { 
+      rule:  [x,y,z] as RuleTuple,
+      resolve: d
+    }
+  })
+}
+
+
+
+
+
 function generateCellularAutomata(_rules: Rules, settings: Settings) {
   let rules = [..._rules];
   let world = Array(COUNT).fill(0);
   world[Math.floor(COLUMNS / 2)] ^= 1;
+
+  encodeRule(rules, settings)
+
 
   for (let position = 0; position < COUNT; position++) {
     const x = position % COLUMNS;
@@ -274,6 +314,9 @@ function createCanvasDrawing(
     canvas.style.height = ch + "px";
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
+
+
+
     let world = generateCellularAutomata(rules, settings);
 
     for (let index = 0; index < COUNT; index++) {
@@ -294,8 +337,8 @@ function createCanvasDrawing(
 function CellularAutomata() {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const [rules, setRules] = React.useState<Rules>(RULES);
-  const [maze, setMaze] = React.useState<boolean>(false);
-  const [shuffled, setShuffled] = React.useState<boolean>(false);
+  const [maze, setMaze] = React.useState<boolean>(paramMaze === "true" ? true : false);
+  const [shuffled, setShuffled] = React.useState<boolean>(paramShuffle === "true" ? true : false);
 
   React.useEffect(
     () =>
@@ -368,5 +411,7 @@ function CellularAutomata() {
     </Container>
   );
 }
+
+
 
 export default CellularAutomata;
