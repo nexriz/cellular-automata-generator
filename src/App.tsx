@@ -6,8 +6,18 @@ type Rules = { rule: RuleTuple; resolve: number }[];
 type Settings = { maze: boolean; shuffled: boolean };
 const ON_COLOR = "#313950";
 
-const cw = window.innerWidth;
-const ch = window.innerHeight + 1000;
+// http://localhost:3000/?rule=e5bbd71d&maze=false&shuffle=false
+
+
+const params = new URLSearchParams(window.location.search)
+const paramW = params.get("w")
+const paramH = params.get("h")
+const paramRule = params.get("r")
+const paramMaze = params.get("m")
+const paramShuffle = params.get("s")
+
+const cw = paramW ? Number(paramW) : (window.innerWidth % 2 === 0 ? window.innerWidth + 1 : window.innerWidth);
+const ch = paramH ? Number(paramH) : window.innerHeight + 1000;
 const cellWidth = 4;
 const cellHeight = 6;
 const ROWS = Math.round(ch / cellHeight);
@@ -97,7 +107,7 @@ const ArbitraryRulesList: Rules[] = [
   ],
 ];
 
-
+// http://localhost:3000/?rule=f93ab04e&maze=false&shuffle=true
 
 function* RandomStoreRule() {
   let prev = 0;
@@ -113,11 +123,6 @@ function* RandomStoreRule() {
   // eslint-disable-next-line 
   return prev;
 }
-
-const params = new URLSearchParams(window.location.search)
-const paramRule = params.get("rule")
-const paramMaze = params.get("maze")
-const paramShuffle = params.get("shuffle")
 
 const randomStoreRule = RandomStoreRule();
 
@@ -240,7 +245,7 @@ function converter(c: string) {
 
 function encodeRule(rules: Rules, settings: Settings) {
   const code = rules.reduce((str, c) => str + convertNumber(c.rule.join("") + c.resolve, 2, 16), "")
-  window.history.replaceState({}, "rule", `?rule=${code}&maze=${settings.maze}&shuffle=${settings.shuffled}`)
+  window.history.replaceState({}, "rule", `?r=${code}&m=${settings.maze}&s=${settings.shuffled}&w=${cw}&h=${ch}`)
   return code
 }
 
